@@ -1,0 +1,61 @@
+<div class="link-card group"
+     id="link-{{.ID}}"
+     data-id="{{.ID}}"
+     data-name="{{.Name}}"
+     data-url="{{.URL}}"
+     data-grid-col="{{.GridCol}}"
+     data-grid-row="{{.GridRow}}"
+     data-col-span="{{.ColSpan}}"
+     data-row-span="{{.RowSpan}}"
+     style="grid-column:{{.GridCol}}/span {{.ColSpan}};grid-row:{{.GridRow}}/span {{.RowSpan}};">
+
+    <!-- Drag handle (full card overlay, edit mode only) -->
+    <div class="drag-handle" style="border-radius:1.5rem;"></div>
+
+    <!-- Resize handle (bottom-right, floats outside overflow:hidden) -->
+    <div class="resize-handle">
+        <svg viewBox="0 0 8 8" class="w-3 h-3 text-white fill-none stroke-current" stroke-width="2">
+            <path d="M1 7 L7 7 L7 1"/>
+        </svg>
+    </div>
+
+    <!-- Inner card (overflow:hidden for rounded corners, shadows clip here are fine since outer is visible) -->
+    <div class="link-card-inner htmx-added">
+
+        <input type="checkbox" name="selected_links" value="{{.ID}}" class="link-checkbox hidden">
+
+        <!-- Selection indicator -->
+        <div class="selection-indicator hidden z-30 absolute top-3 right-3 w-6 h-6 rounded-full border-2 border-white/20 bg-slate-900/50 flex items-center justify-center transition-all duration-300">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-white scale-0 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+        </div>
+
+        <!-- Edit button -->
+        <button hx-get="/edit-link/{{.ID}}"
+                hx-target="#modals-container"
+                hx-swap="innerHTML"
+                class="edit-btn hidden z-30 absolute top-3 left-3 p-2 rounded-xl bg-blue-500/80 text-white hover:bg-blue-600 transition-colors shadow-lg backdrop-blur-md">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+            </svg>
+        </button>
+
+        <!-- App link content -->
+        <a href="{{.URL}}" target="_blank" rel="noopener noreferrer" class="app-link absolute inset-0 z-10 flex flex-col items-center justify-center p-3">
+            <div class="w-14 h-14 flex items-center justify-center transition-all duration-300 ease-out group-hover:scale-105 group-hover:-translate-y-3 relative z-10 drop-shadow-xl">
+                {{if .Icon}}
+                    <img src="{{.Icon}}" alt="{{.Name}}" class="w-full h-full object-contain drop-shadow-lg" onerror="this.onerror=null;this.src='/static/default-icon.png'">
+                {{else}}
+                    <img src="/static/default-icon.png" alt="{{.Name}}" class="w-full h-full object-contain drop-shadow-lg opacity-80 group-hover:opacity-100 transition-opacity">
+                {{end}}
+            </div>
+
+            <div class="absolute inset-0 bg-gradient-to-t from-[var(--card-gradient-from)] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-[1.4rem]"></div>
+
+            <div class="absolute bottom-3 left-0 right-0 px-3 text-center opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-3 group-hover:translate-y-0 z-20">
+                <h3 class="app-title text-sm font-semibold text-[var(--card-text)] whitespace-nowrap drop-shadow-md leading-tight">{{.Name}}</h3>
+            </div>
+        </a>
+    </div>
+</div>

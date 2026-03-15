@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  volt-app:
+    image: ${VOLT_IMAGE:-ghcr.io/notaris/volt:latest}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: volt_container
+    ports:
+      - "${PORT:-8686}:8686"
+    volumes:
+      - ./data:/app/data
+      - ./uploads:/app/uploads
+    environment:
+      - PORT=8686
+    restart: unless-stopped

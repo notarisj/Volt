@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en" class="theme-{{.Theme}}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Volt - Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: { extend: { fontFamily: { sans: ['Outfit', 'sans-serif'] } } }
+        }
+    </script>
+    <style>
+        /* ── Dark (default) ── */
+        :root {
+            --bg:           #0f172a;
+            --orb-1:        rgba(59,130,246,0.15);
+            --orb-2:        rgba(147,51,234,0.15);
+            --card-bg:      rgba(15,23,42,0.5);
+            --card-border:  rgba(255,255,255,0.07);
+            --card-glow:    rgba(59,130,246,0.25);
+            --input-bg:     rgba(2,6,23,0.5);
+            --input-border: rgba(255,255,255,0.06);
+            --label:        #94a3b8;
+            --text:         #f1f5f9;
+            --placeholder:  #475569;
+            --autofill-bg:  #020617;
+            --autofill-fg:  #ffffff;
+        }
+        /* ── Light ── */
+        html.theme-light {
+            --bg:           #f1f5f9;
+            --orb-1:        rgba(59,130,246,0.08);
+            --orb-2:        rgba(147,51,234,0.08);
+            --card-bg:      rgba(255,255,255,0.85);
+            --card-border:  rgba(0,0,0,0.07);
+            --card-glow:    rgba(59,130,246,0.12);
+            --input-bg:     rgba(0,0,0,0.03);
+            --input-border: rgba(0,0,0,0.08);
+            --label:        #64748b;
+            --text:         #0f172a;
+            --placeholder:  #94a3b8;
+            --autofill-bg:  #f8fafc;
+            --autofill-fg:  #0f172a;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+        }
+        .glow-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            box-shadow: 0 0 60px -12px var(--card-glow), 0 4px 32px rgba(0,0,0,0.12);
+            backdrop-filter: blur(20px);
+        }
+        .auth-input {
+            width: 100%;
+            padding: 1rem 1.25rem;
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 1rem;
+            color: var(--text);
+            font-size: 1rem;
+            font-family: inherit;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            outline: none;
+        }
+        .auth-input::placeholder { color: var(--placeholder); }
+        .auth-input:focus {
+            border-color: rgba(59,130,246,0.5);
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
+        }
+        .auth-label { color: var(--label); font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem; display: block; margin-left: 0.25rem; }
+
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus {
+            -webkit-text-fill-color: var(--autofill-fg);
+            -webkit-box-shadow: 0 0 0px 1000px var(--autofill-bg) inset;
+            transition: background-color 5000s ease-in-out 0s;
+        }
+
+        .orb-1 { background: var(--orb-1); }
+        .orb-2 { background: var(--orb-2); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4 antialiased" style="font-family:'Outfit',sans-serif">
+
+    <!-- Background orbs -->
+    <div class="fixed inset-0 overflow-hidden -z-10 pointer-events-none">
+        <div class="orb-1 absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full blur-[120px]"></div>
+        <div class="orb-2 absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full blur-[120px]"></div>
+    </div>
+
+    <div class="w-full max-w-md glow-card rounded-[2rem] p-10">
+
+        <!-- Logo + title -->
+        <div class="flex flex-col items-center mb-8 gap-3">
+            <h1 class="text-3xl font-bold tracking-tight" style="color:var(--text)">
+                Volt<span style="color:#3b82f6">.</span>
+            </h1>
+        </div>
+
+        {{if .Error}}
+        <div class="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-2xl mb-6 text-sm flex items-center gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+            </svg>
+            {{.Error}}
+        </div>
+        {{end}}
+
+        <form action="/login" method="POST" class="space-y-5">
+            <div>
+                <label class="auth-label">Username</label>
+                <input type="text" name="username" required autocomplete="username"
+                       class="auth-input" placeholder="Admin username">
+            </div>
+            <div>
+                <label class="auth-label">Password</label>
+                <input type="password" name="password" required autocomplete="current-password"
+                       class="auth-input" placeholder="••••••••">
+            </div>
+            <button type="submit"
+                    class="w-full py-3.5 bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white font-bold rounded-2xl transition-all duration-200 shadow-lg mt-2"
+                    style="box-shadow:0 4px 20px rgba(59,130,246,0.3)">
+                Sign In
+            </button>
+        </form>
+
+    </div>
+
+    <script>
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('keydown', e => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    document.querySelector('button[type="submit"]')?.click();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,267 @@
+<!-- Modal Dialog for Settings -->
+<dialog id="settingsModal" class="bg-slate-900 border border-white/10 rounded-2xl shadow-2xl shadow-black p-0 backdrop-blur-xl text-white w-full max-w-lg my-auto mx-auto translate-y-[-50px] transition-all open:translate-y-0 open:opacity-100 opacity-0 m-auto fixed inset-0 z-50">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between px-6 pt-6 pb-0">
+        <h2 class="text-xl font-bold">Preferences</h2>
+        <button onclick="document.getElementById('settingsModal').close()" class="p-2 hover:bg-white/10 rounded-lg transition-colors text-slate-400 hover:text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+    </div>
+
+    <!-- Tab bar -->
+    <div class="flex gap-1 px-6 mt-5 border-b border-white/5 pb-0" id="prefTabBar">
+        <button type="button" data-tab="appearance"
+            class="pref-tab active-tab flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors relative">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+            </svg>
+            Appearance
+        </button>
+        <button type="button" data-tab="layout"
+            class="pref-tab flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors relative">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+            </svg>
+            Layout
+        </button>
+        <button type="button" data-tab="widgets"
+            class="pref-tab flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors relative">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+            Widgets
+        </button>
+    </div>
+
+    <style>
+        .pref-tab {
+            color: #94a3b8;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
+        }
+        .pref-tab:hover { color: #cbd5e1; }
+        .pref-tab.active-tab {
+            color: #f8fafc;
+            border-bottom-color: #3b82f6;
+        }
+        /* Light theme overrides are applied via body.theme-light rules in main.html */
+        .pref-panel { display: none; }
+        .pref-panel.active-panel { display: block; }
+        #prefPanelWrap { overflow: hidden; transition: height 0.22s ease; }
+    </style>
+
+    <form id="settingsForm" hx-post="/edit-settings" hx-swap="none">
+
+        <div id="prefPanelWrap">
+
+        <!-- ── Appearance ── -->
+        <div id="tab-appearance" class="pref-panel active-panel px-6 py-5 space-y-3">
+
+            <div class="flex items-center justify-between p-3.5 bg-slate-950/40 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-slate-800 text-slate-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="font-medium text-sm">Theme</p>
+                        <p class="text-xs text-slate-500">Dark or light interface</p>
+                    </div>
+                </div>
+                <select name="theme_mode" class="bg-slate-800 border border-white/8 rounded-lg px-3 py-1.5 text-sm text-slate-200 focus:outline-none focus:border-blue-500/50 transition-colors cursor-pointer">
+                    <option value="dark"  {{if eq (index .Settings "theme_mode") "dark"}}selected{{end}}>Dark Slate</option>
+                    <option value="light" {{if eq (index .Settings "theme_mode") "light"}}selected{{end}}>Clean White</option>
+                </select>
+            </div>
+
+            <div class="flex items-center justify-between p-3.5 bg-slate-950/40 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-slate-800 text-slate-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="font-medium text-sm">Animations</p>
+                        <p class="text-xs text-slate-500">Smooth transitions and hover effects</p>
+                    </div>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" name="animations_enabled" value="true" class="sr-only peer" {{if eq (index .Settings "animations_enabled") "true"}}checked{{end}}>
+                    <div class="w-11 h-6 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                </label>
+            </div>
+
+        </div>
+
+        <!-- ── Layout ── -->
+        <div id="tab-layout" class="pref-panel px-6 py-5 space-y-3">
+
+            <div class="flex items-center justify-between p-3.5 bg-slate-950/40 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-slate-800 text-slate-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 8h16M4 16h16" />
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="font-medium text-sm">Card Size</p>
+                        <p class="text-xs text-slate-500">Width &amp; height of each grid cell</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <input type="range" name="grid_cell" min="80" max="200" step="10"
+                           value="{{index .Settings "grid_cell"}}"
+                           oninput="this.nextElementSibling.textContent=this.value+'px'"
+                           class="w-28 accent-blue-500 cursor-pointer">
+                    <span class="text-sm text-slate-300 w-12 text-right tabular-nums">{{index .Settings "grid_cell"}}px</span>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between p-3.5 bg-slate-950/40 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-slate-800 text-slate-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18" />
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="font-medium text-sm">Card Gap</p>
+                        <p class="text-xs text-slate-500">Spacing between grid cells</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <input type="range" name="grid_gap" min="4" max="48" step="4"
+                           value="{{index .Settings "grid_gap"}}"
+                           oninput="this.nextElementSibling.textContent=this.value+'px'"
+                           class="w-28 accent-blue-500 cursor-pointer">
+                    <span class="text-sm text-slate-300 w-12 text-right tabular-nums">{{index .Settings "grid_gap"}}px</span>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between p-3.5 bg-slate-950/40 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-slate-800 text-slate-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h7" />
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="font-medium text-sm">Compact Mode</p>
+                        <p class="text-xs text-slate-500">Hide header, centre content</p>
+                    </div>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" name="is_compact_mode" value="true" class="sr-only peer" {{if eq (index .Settings "is_compact_mode") "true"}}checked{{end}}>
+                    <div class="w-11 h-6 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                </label>
+            </div>
+
+        </div>
+
+        <!-- ── Widgets ── -->
+        <div id="tab-widgets" class="pref-panel px-6 py-5 space-y-3">
+
+            <div class="flex items-center justify-between p-3.5 bg-slate-950/40 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-green-950/60 text-green-400 border border-green-500/20">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="font-medium text-sm">CPU Widget</p>
+                        <p class="text-xs text-slate-500">Live processor usage card</p>
+                    </div>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" name="show_cpu_widget" value="true" class="sr-only peer" {{if ne (index .Settings "show_cpu_widget") "false"}}checked{{end}}>
+                    <div class="w-11 h-6 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                </label>
+            </div>
+
+            <div class="flex items-center justify-between p-3.5 bg-slate-950/40 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-amber-950/60 text-amber-400 border border-amber-500/20">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="font-medium text-sm">RAM Widget</p>
+                        <p class="text-xs text-slate-500">Live memory usage card</p>
+                    </div>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" name="show_ram_widget" value="true" class="sr-only peer" {{if ne (index .Settings "show_ram_widget") "false"}}checked{{end}}>
+                    <div class="w-11 h-6 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                </label>
+            </div>
+
+        </div>
+
+        </div><!-- /prefPanelWrap -->
+
+        <!-- Footer / save -->
+        <div class="px-6 pb-6 pt-2">
+            <button type="submit" class="w-full py-2.5 bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white font-semibold rounded-xl transition-all shadow-lg shadow-blue-900/30 text-sm">
+                Save Preferences
+            </button>
+        </div>
+
+    </form>
+</dialog>
+
+<script>
+(function() {
+    var modal = document.getElementById('settingsModal');
+    modal.showModal();
+
+    // Tab switching with animated height
+    var tabs   = modal.querySelectorAll('.pref-tab');
+    var panels = modal.querySelectorAll('.pref-panel');
+    var wrap   = document.getElementById('prefPanelWrap');
+
+    // Set initial explicit height so transitions have a from-value
+    wrap.style.height = wrap.scrollHeight + 'px';
+
+    tabs.forEach(function(tab) {
+        tab.addEventListener('click', function() {
+            var target    = tab.getAttribute('data-tab');
+            var nextPanel = document.getElementById('tab-' + target);
+
+            // Measure next panel height while it's still hidden
+            nextPanel.style.cssText = 'display:block;position:absolute;visibility:hidden;pointer-events:none';
+            var nextHeight = nextPanel.scrollHeight;
+            nextPanel.style.cssText = '';
+
+            // Pin current height, then animate to next height
+            wrap.style.height = wrap.scrollHeight + 'px';
+            wrap.offsetHeight; // force reflow
+
+            tabs.forEach(function(t)   { t.classList.remove('active-tab'); });
+            panels.forEach(function(p) { p.classList.remove('active-panel'); });
+            tab.classList.add('active-tab');
+            nextPanel.classList.add('active-panel');
+
+            wrap.style.height = nextHeight + 'px';
+            wrap.addEventListener('transitionend', function clear() {
+                wrap.style.height = wrap.scrollHeight + 'px';
+                wrap.removeEventListener('transitionend', clear);
+            });
+        });
+    });
+
+    // Save & reload
+    document.getElementById('settingsForm').addEventListener('htmx:afterRequest', function(e) {
+        if (e.detail.successful) {
+            modal.close();
+            window.location.reload();
+        }
+    });
+})();
+</script>

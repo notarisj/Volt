@@ -1,0 +1,1189 @@
+
+<!-- Dashboard Main Header -->
+<div class="mb-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 dashboard-main-header transition-all duration-300">
+    <div id="dashboard-header" class="relative group/header w-full flex-1 max-w-xl">
+        <form id="settingsFormMain" hx-post="/edit-settings" hx-swap="none" hx-trigger="keyup changed delay:500ms from:input">
+            <div class="header-content header-normal-view">
+                <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400 mb-2">
+                    {{index .Settings "dashboard_title"}}
+                </h1>
+                <p class="text-slate-400 text-lg">{{index .Settings "dashboard_subtitle"}}</p>
+            </div>
+
+            <div class="header-edit-view hidden flex-col gap-4 w-full pt-1">
+                <div>
+                    <input type="text" name="dashboard_title" value="{{index .Settings "dashboard_title"}}" placeholder="Your Dashboard"
+                        class="w-full px-4 py-2.5 bg-slate-950/60 border border-white/5 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-0 focus:border-blue-500/40 font-medium">
+                </div>
+                <div>
+                    <input type="text" name="dashboard_subtitle" value="{{index .Settings "dashboard_subtitle"}}" placeholder="Lightning fast access..."
+                        class="w-full px-4 py-2.5 bg-slate-950/60 border border-white/5 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-0 focus:border-blue-500/40 font-medium">
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Add Application Modal -->
+<dialog id="addModal" class="bg-slate-900 border border-white/10 rounded-2xl shadow-2xl shadow-black p-0 backdrop-blur-xl text-white w-full max-w-md my-auto mx-auto translate-y-[-50px] transition-all open:translate-y-0 open:opacity-100 opacity-0 m-auto fixed inset-0 z-50">
+    <div class="p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold">Add Application</h2>
+            <button onclick="document.getElementById('addModal').close()" class="p-2 hover:bg-white/10 rounded-lg transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+
+        <form id="addForm"
+              hx-post="/add-link"
+              hx-target="#link-grid"
+              hx-swap="beforeend"
+              hx-encoding="multipart/form-data"
+              class="flex flex-col gap-4">
+
+            <div>
+                <label class="block text-sm font-medium text-slate-400 mb-1">App Name</label>
+                <input type="text" name="name" placeholder="e.g. GitHub" required
+                    class="w-full px-4 py-2.5 bg-slate-950/60 border border-white/5 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-0 focus:border-blue-500/40 font-medium">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-slate-400 mb-1">URL</label>
+                <input type="url" name="url" placeholder="https://" required
+                    class="w-full px-4 py-2.5 bg-slate-950/60 border border-white/5 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-0 focus:border-blue-500/40 font-medium">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-slate-400 mb-1">Custom Icon (Optional)</label>
+                <input type="file" name="icon" accept="image/*"
+                    class="w-full px-4 py-2 bg-slate-950/60 border border-white/5 rounded-xl text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-600 file:text-white hover:file:bg-blue-500 transition-all cursor-pointer">
+                <p class="text-xs text-slate-500 mt-2">Leave empty to auto-detect icon.</p>
+            </div>
+
+            <button type="submit" class="mt-4 w-full py-3 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-bold rounded-xl transition-all shadow-lg">
+                Save Application
+            </button>
+        </form>
+    </div>
+</dialog>
+
+<style>
+    dialog::backdrop {
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(4px);
+    }
+
+    /* ── Unified grid ── */
+    #link-grid {
+        --cell: {{if index .Settings "grid_cell"}}{{index .Settings "grid_cell"}}px{{else}}110px{{end}};
+        --gap:  {{if index .Settings "grid_gap"}}{{index .Settings "grid_gap"}}px{{else}}16px{{end}};
+        display: grid;
+        grid-template-columns: repeat(auto-fill, var(--cell));
+        grid-auto-rows: var(--cell);
+        gap: var(--gap);
+        justify-content: center;
+        position: relative;
+        padding: 8px;
+    }
+
+    /* Ghost drop-target */
+    .grid-ghost {
+        border: 2px dashed rgba(59,130,246,0.55);
+        background: rgba(59,130,246,0.08);
+        border-radius: 1rem;
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    /* Stat widget cards live inside the same grid */
+    .stat-card {
+        background: rgba(15,23,42,0.75);
+        border: 1px solid rgba(255,255,255,0.07);
+        border-radius: 1.5rem;
+        padding: 0.875rem 1rem;
+        backdrop-filter: blur(16px);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        position: relative;
+        overflow: visible;
+    }
+    .stat-card--cpu {
+        border-color: rgba(74,222,128,0.25);
+        background: linear-gradient(145deg, rgba(15,23,42,0.85), rgba(20,83,45,0.2));
+        box-shadow: 0 0 0 1px rgba(74,222,128,0.08), 0 4px 24px rgba(0,0,0,0.3);
+    }
+    .stat-card--ram {
+        border-color: rgba(251,191,36,0.25);
+        background: linear-gradient(145deg, rgba(15,23,42,0.85), rgba(120,53,15,0.2));
+        box-shadow: 0 0 0 1px rgba(251,191,36,0.08), 0 4px 24px rgba(0,0,0,0.3);
+    }
+    .stat-card.dragging { opacity: 0.4; }
+    /* Placeholder shown when a stat widget is hidden — only interactive in edit mode */
+    .stat-show-placeholder {
+        display: none;
+        border: 1.5px dashed rgba(255,255,255,0.12);
+        border-radius: 1.5rem;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        color: rgba(255,255,255,0.3);
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: border-color 0.2s, color 0.2s;
+    }
+    body.edit-active .stat-show-placeholder {
+        display: flex;
+    }
+    .stat-show-placeholder:hover {
+        border-color: rgba(255,255,255,0.3);
+        color: rgba(255,255,255,0.6);
+    }
+    .stat-value { font-size: 1.75rem; font-weight: 800; line-height: 1; letter-spacing: -0.03em; }
+    .stat-bars { display: flex; align-items: flex-end; gap: 2px; height: 28px; width: 100%; }
+    .stat-bars > div { flex: 1; border-radius: 2px 2px 1px 1px; min-height: 2px; }
+
+    /* App link cards */
+    .link-card {
+        overflow: visible !important;  /* let box-shadow escape */
+        position: relative;
+        border-radius: 1.5rem;          /* radius on outer too so drag-handle clips correctly */
+    }
+    .link-card-inner {
+        position: absolute;
+        inset: 0;
+        border-radius: 1.4rem;          /* slightly less than outer so no gap */
+        overflow: hidden;
+        background: linear-gradient(145deg, rgba(15,23,42,0.88), rgba(var(--dc-r,59), var(--dc-g,130), var(--dc-b,246), 0.18));
+        border: 1px solid rgba(var(--dc-r,59), var(--dc-g,130), var(--dc-b,246), 0.22);
+        box-shadow: 0 0 0 1px rgba(var(--dc-r,59), var(--dc-g,130), var(--dc-b,246), 0.07), 0 4px 24px rgba(0,0,0,0.3);
+        transition: border-color 0.2s, box-shadow 0.2s, background 0.4s;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+    .link-card:hover .link-card-inner {
+        border-color: rgba(var(--dc-r,59), var(--dc-g,130), var(--dc-b,246), 0.5);
+        box-shadow: 0 0 0 1px rgba(var(--dc-r,59), var(--dc-g,130), var(--dc-b,246), 0.14), 0 8px 32px rgba(0,0,0,0.45);
+    }
+
+    /* ── Resize handle — floats outside card using absolute on the OUTER wrapper ── */
+    .resize-handle {
+        display: none;
+        position: absolute;
+        bottom: -8px;
+        right: -8px;
+        width: 24px;
+        height: 24px;
+        background: rgba(30,41,59,0.95);
+        border: 1.5px solid rgba(99,179,237,0.55);
+        border-radius: 8px;
+        cursor: se-resize;
+        z-index: 50;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.08);
+        transition: background 0.15s, border-color 0.15s, transform 0.15s;
+        gap: 2px;
+    }
+    .resize-handle:hover {
+        background: rgba(59,130,246,0.85);
+        border-color: rgba(147,210,255,0.7);
+        transform: scale(1.15);
+    }
+    /* grip dots pattern */
+    .resize-handle::before {
+        content: '';
+        display: block;
+        width: 10px;
+        height: 10px;
+        background-image:
+            radial-gradient(circle, rgba(255,255,255,0.7) 1.2px, transparent 1.2px),
+            radial-gradient(circle, rgba(255,255,255,0.7) 1.2px, transparent 1.2px),
+            radial-gradient(circle, rgba(255,255,255,0.7) 1.2px, transparent 1.2px),
+            radial-gradient(circle, rgba(255,255,255,0.35) 1.2px, transparent 1.2px),
+            radial-gradient(circle, rgba(255,255,255,0.35) 1.2px, transparent 1.2px),
+            radial-gradient(circle, rgba(255,255,255,0.35) 1.2px, transparent 1.2px);
+        background-size: 4px 4px;
+        background-position: 0 0, 4px 0, 0 4px, 4px 4px, 0 8px, 4px 8px;
+        background-repeat: no-repeat;
+        pointer-events: none;
+    }
+    .resize-handle svg { display: none; }
+
+    /* Drag handle covers the inner card area */
+    .drag-handle {
+        display: none;
+        position: absolute;
+        inset: 0;
+        z-index: 20;
+        cursor: grab;
+        border-radius: 1.4rem;
+    }
+    .drag-handle:active { cursor: grabbing; }
+
+
+    /* Edit-mode toggles */
+    body.edit-active .selection-indicator { display: flex !important; }
+    body.edit-active .link-card.selected .link-card-inner {
+        border-color: rgba(59,130,246,0.8) !important;
+        box-shadow: 0 0 20px rgba(59,130,246,0.3) !important;
+    }
+    body.edit-active .link-card.selected .selection-indicator {
+        background-color: rgb(37,99,235);
+        border-color: rgb(37,99,235);
+    }
+    body.edit-active .link-card.selected .selection-indicator svg { scale: 1; }
+    body.edit-active .header-normal-view { display: none !important; }
+    body.edit-active .header-edit-view   { display: flex !important; }
+    body.edit-active .link-card .app-link   { pointer-events: none; }
+    /* No hover animations in edit mode */
+    body.edit-active .link-card .app-link .w-14 { transform: none !important; transition: none !important; }
+    body.edit-active .link-card .app-link .absolute.inset-0.bg-gradient-to-t { opacity: 0 !important; }
+    body.edit-active .link-card .app-link .absolute.bottom-3 { opacity: 0 !important; transform: none !important; transition: none !important; }
+    body.edit-active .link-card:hover .link-card-inner { border-color: var(--card-border) !important; box-shadow: none !important; }
+    body.edit-active .edit-btn              { display: flex !important; }
+    #batch-actions {
+        display: block;
+        overflow: hidden;
+        max-height: 0;
+        opacity: 0;
+        margin-bottom: 0;
+        transition: max-height 0.25s ease, opacity 0.2s ease, margin-bottom 0.25s ease;
+    }
+    body.edit-active:not(.search-active) #batch-actions {
+        max-height: 100px;
+        opacity: 1;
+        margin-bottom: 0.75rem;
+    }
+    #batch-actions { margin-left: auto; margin-right: auto; box-sizing: border-box; }
+    body.edit-active .resize-handle         { display: flex !important; }
+    body.edit-active .drag-handle           { display: block !important; }
+    body.edit-active .link-card.dragging    { opacity: 0.35; z-index: 100; }
+    body.edit-active .stat-card .drag-handle{ display: block !important; }
+    body.edit-active .stat-card .resize-handle{ display: flex !important; }
+    body.edit-active #app-search { pointer-events: none; opacity: 0.35; }
+    body.search-active #editBtn  { pointer-events: none; opacity: 0.35; }
+</style>
+
+<!-- Link Grid (stats + app cards share the same CSS grid) -->
+<form id="delete-form" hx-post="/delete-links" hx-target="#link-grid" hx-swap="innerHTML" hx-on::after-request="initGrid()">
+    <div id="grid-wrapper">
+    <div id="batch-actions">
+        <div class="flex items-center justify-between bg-slate-900/60 border border-white/10 rounded-2xl p-4 backdrop-blur-md">
+            <div class="flex items-center gap-4">
+                <span id="selection-count" class="text-blue-400 font-bold bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20">0 Selected</span>
+                <button type="button" onclick="selectAll()" class="text-sm font-medium text-slate-400 hover:text-white transition-colors">Select All</button>
+                <button type="button" onclick="clearSelection()" class="text-sm font-medium text-slate-400 hover:text-white transition-colors">Clear</button>
+            </div>
+            <button type="button"
+                    onclick="var n=document.querySelectorAll('.link-checkbox:checked').length;document.getElementById('bulkDeleteCount').textContent=n;document.getElementById('bulkDeleteModal').showModal()"
+                    class="flex items-center gap-2 px-6 py-2 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-red-500/20 border border-red-500/50 active:scale-95">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Delete Selected
+            </button>
+        </div>
+    </div>
+
+    <div id="link-grid" class="animate-slide-up mb-4">
+
+        {{if ne (index .Settings "show_cpu_widget") "false"}}
+        <!-- CPU stat widget -->
+        <div class="stat-card stat-card--cpu"
+             id="stat-cpu"
+             data-widget="stat"
+             data-id="stat-cpu"
+             data-grid-col="1"
+             data-grid-row="1"
+             data-col-span="2"
+             data-row-span="1"
+             style="grid-column:1/span 2;grid-row:1/span 1;">
+            <div class="drag-handle rounded-2xl"></div>
+            <div class="resize-handle"><svg viewBox="0 0 8 8" class="w-3 h-3 text-white fill-none stroke-current stroke-2"><path d="M1 7 L7 7 L7 1"/></svg></div>
+            <!-- Header -->
+            <div class="flex items-center justify-between pointer-events-none">
+                <div class="flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5 text-green-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="7" y="7" width="10" height="10" rx="1"/><path d="M9 7V4m6 3V4M9 20v-3m6 3v-3M7 9H4m3 6H4m16-6h-3m3 6h-3"/></svg>
+                    <span class="text-xs font-bold text-green-400/80 uppercase tracking-wider">CPU</span>
+                    <span id="cpu-cores" class="text-xs text-slate-500 font-mono"></span>
+                </div>
+                <span id="hostname" class="text-xs text-slate-600 font-mono truncate max-w-[100px]"></span>
+            </div>
+            <!-- Value -->
+            <div class="flex items-baseline gap-3 pointer-events-none">
+                <span id="cpu-label" class="stat-value text-green-400 tabular-nums">—</span>
+                <span id="cpu-avg-pk" class="text-xs text-slate-500 leading-tight"></span>
+            </div>
+            <!-- Bars -->
+            <div id="cpu-sparkline" class="stat-bars pointer-events-none"></div>
+        </div>
+        {{end}}
+
+        {{if ne (index .Settings "show_ram_widget") "false"}}
+        <!-- RAM stat widget -->
+        <div class="stat-card stat-card--ram"
+             id="stat-ram"
+             data-widget="stat"
+             data-id="stat-ram"
+             data-grid-col="3"
+             data-grid-row="1"
+             data-col-span="2"
+             data-row-span="1"
+             style="grid-column:3/span 2;grid-row:1/span 1;">
+            <div class="drag-handle rounded-2xl"></div>
+            <div class="resize-handle"><svg viewBox="0 0 8 8" class="w-3 h-3 text-white fill-none stroke-current stroke-2"><path d="M1 7 L7 7 L7 1"/></svg></div>
+            <!-- Header -->
+            <div class="flex items-center justify-between pointer-events-none">
+                <div class="flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5 text-amber-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="8" width="20" height="8" rx="1"/><path d="M6 8V6m4 2V6m4 2V6m4 2V6M6 16v2m4-2v2m4-2v2m4-2v2"/></svg>
+                    <span class="text-xs font-bold text-amber-400/80 uppercase tracking-wider">RAM</span>
+                </div>
+                <span id="ram-detail" class="text-xs text-slate-500 font-mono"></span>
+            </div>
+            <!-- Value -->
+            <div class="flex items-baseline gap-3 pointer-events-none">
+                <span id="ram-label" class="stat-value text-amber-400 tabular-nums">—</span>
+                <span id="ram-avg-pk" class="text-xs text-slate-500 leading-tight"></span>
+            </div>
+            <!-- Bars -->
+            <div id="ram-sparkline" class="stat-bars pointer-events-none"></div>
+        </div>
+        {{else}}
+        <!-- RAM hidden placeholder — positioned by initGrid(), only interactive in edit mode -->
+        <div id="stat-ram-placeholder" class="stat-show-placeholder" title="Show RAM widget"
+             onclick="fetch('/edit-settings',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'show_ram_widget=true'}).then(r=>{if(r.ok)location.reload()})">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+            RAM
+        </div>
+        {{end}}
+
+        <!-- App cards -->
+        {{template "partials/link_list" .Links}}
+    </div>
+
+    <!-- Search empty state -->
+    <div id="search-empty" class="hidden flex-col items-center justify-center py-20 gap-3 text-center">
+        <svg class="w-10 h-10 text-slate-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z"/>
+        </svg>
+        <p class="text-slate-500 font-medium">No apps match <span id="search-empty-term" class="text-slate-400 font-semibold"></span></p>
+    </div>
+    </div>
+</form>
+
+<script>
+(function () {
+    // ── Stats — Server-Sent Events ───────────────────────────
+    const BARS = 48;
+    const cpuH = Array(BARS).fill(0);
+    const ramH = Array(BARS).fill(0);
+    let cpuSum=0, cpuPk=0, cpuCount=0;
+    let ramSum=0, ramPk=0, ramCount=0;
+
+    function fmt(b) { return b>=1073741824?(b/1073741824).toFixed(1)+' GB':(b/1048576).toFixed(0)+' MB'; }
+    function fmtPct(v) { return v.toFixed(1)+'%'; }
+
+    // Null-safe text setter — no-ops when the widget is hidden
+    function setText(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
+
+    function bars(id, hist, color) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const max = Math.max(...hist, 1);
+        el.innerHTML = hist.map(v => {
+            const h = Math.max(2, Math.round((v/max)*28));
+            const opacity = (0.25 + (v/max)*0.75).toFixed(2);
+            return `<div style="height:${h}px;background:${color};opacity:${opacity}"></div>`;
+        }).join('');
+    }
+
+    function updateStats(d) {
+        const cpu = +d.cpu_percent, ram = +d.ram_percent, ramUsed = +d.ram_used;
+        cpuSum += cpu;  cpuCount++; if (cpu    > cpuPk) cpuPk = cpu;
+        ramSum += ramUsed; ramCount++; if (ramUsed > ramPk) ramPk = ramUsed;
+        const cpuAvg = cpuSum / cpuCount, ramAvg = ramSum / ramCount;
+
+        setText('cpu-label',  fmtPct(cpu));
+        setText('cpu-cores',  d.cpu_cores + ' cores');
+        setText('hostname',   d.hostname);
+        setText('cpu-avg-pk', 'avg ' + fmtPct(cpuAvg) + ' · pk ' + fmtPct(cpuPk));
+
+        setText('ram-label',  fmt(ramUsed));
+        setText('ram-detail', fmt(d.ram_total));
+        setText('ram-avg-pk', 'avg ' + fmt(ramAvg) + ' · pk ' + fmt(ramPk));
+
+        cpuH.shift(); cpuH.push(cpu);
+        ramH.shift(); ramH.push(ram);
+        bars('cpu-sparkline', cpuH, '#4ade80');
+        bars('ram-sparkline', ramH, '#fbbf24');
+    }
+
+    function startStream() {
+        const es = new EventSource('/api/stats/stream');
+        es.onmessage = function(e) {
+            try { updateStats(JSON.parse(e.data)); } catch(_) {}
+        };
+        es.onerror = function() {
+            es.close();
+            // Distinguish auth failure (→ redirect) from transient error (→ retry)
+            fetch('/api/stats', { method: 'HEAD' }).then(r => {
+                if (r.status === 401 || r.status === 403 || r.redirected) {
+                    window.location.href = '/login';
+                } else {
+                    setTimeout(startStream, 3000);
+                }
+            }).catch(() => setTimeout(startStream, 3000));
+        };
+    }
+
+    startStream();
+})();
+</script>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  Volt Grid Engine — drag + resize + snap
+// ═══════════════════════════════════════════════════════
+(function () {
+
+// ── Grid metrics ──────────────────────────────────────
+let COLS = 6, CELL = 110, GAP = 16;
+
+function readGridMetrics() {
+    const grid = document.getElementById('link-grid');
+    if (!grid) return;
+    const cs = getComputedStyle(grid);
+    CELL = parseInt(cs.getPropertyValue('--cell').trim()) || 110;
+    GAP  = parseInt(cs.getPropertyValue('--gap').trim())  || 16;
+    // Derive COLS from how many cells actually fit in the container width
+    const innerW = grid.clientWidth - 8 * 2; // subtract padding
+    COLS = Math.max(1, Math.floor((innerW + GAP) / (CELL + GAP)));
+}
+
+// ── Stat widget persistence (localStorage, client-only) ───
+const STAT_KEY = 'volt-stat-layout-{{.Dashboard.ID}}';
+function loadStatLayout() {
+    try { return JSON.parse(localStorage.getItem(STAT_KEY) || '{}'); } catch { return {}; }
+}
+function saveStatLayout() {
+    const layout = {};
+    document.querySelectorAll('[data-widget="stat"]').forEach(w => {
+        layout[w.dataset.id] = {
+            col: parseInt(w.dataset.gridCol),
+            row: parseInt(w.dataset.gridRow),
+            cs:  parseInt(w.dataset.colSpan),
+            rs:  parseInt(w.dataset.rowSpan),
+        };
+    });
+    localStorage.setItem(STAT_KEY, JSON.stringify(layout));
+}
+function applyStatLayout() {
+    const layout = loadStatLayout();
+    document.querySelectorAll('[data-widget="stat"]').forEach(w => {
+        const saved = layout[w.dataset.id];
+        if (saved) {
+            w.dataset.gridCol = saved.col;
+            w.dataset.gridRow = saved.row;
+            w.dataset.colSpan = Math.max(2, saved.cs); // enforce min col-span=2
+            w.dataset.rowSpan = saved.rs;
+        }
+        applyPos(w,
+            parseInt(w.dataset.gridCol)||1,
+            parseInt(w.dataset.gridRow)||1,
+            Math.max(2, parseInt(w.dataset.colSpan)||2),
+            parseInt(w.dataset.rowSpan)||1);
+    });
+}
+
+// ── Helpers ───────────────────────────────────────────
+function clamp(v,lo,hi){return Math.max(lo,Math.min(hi,v));}
+
+function cardData(card) {
+    return {
+        id:  card.dataset.id,
+        col: parseInt(card.dataset.gridCol) || 1,
+        row: parseInt(card.dataset.gridRow) || 1,
+        cs:  parseInt(card.dataset.colSpan) || 1,
+        rs:  parseInt(card.dataset.rowSpan) || 1,
+    };
+}
+
+function applyPos(card, col, row, cs, rs) {
+    card.dataset.gridCol = col;
+    card.dataset.gridRow = row;
+    card.dataset.colSpan = cs;
+    card.dataset.rowSpan = rs;
+    card.style.gridColumn = `${col} / span ${cs}`;
+    card.style.gridRow    = `${row} / span ${rs}`;
+    if (card.classList.contains('link-card')) {
+        card.classList.toggle('tall-card', rs >= 2);
+    }
+}
+
+// ── Ghost cell ────────────────────────────────────────
+let ghost = null;
+function showGhost(col, row, cs, rs) {
+    const grid = document.getElementById('link-grid');
+    if (!ghost) {
+        ghost = document.createElement('div');
+        ghost.className = 'grid-ghost';
+        grid.appendChild(ghost);
+    }
+    ghost.style.gridColumn = `${col} / span ${cs}`;
+    ghost.style.gridRow    = `${row} / span ${rs}`;
+    ghost.style.display    = 'block';
+}
+function hideGhost() { if (ghost) ghost.style.display = 'none'; }
+
+// ── Occupancy (skip the dragged item and stat widgets during link drag) ───
+function buildOccupied(excludeId, includeStats) {
+    const map = {};
+    const sel = includeStats
+        ? '.link-card, [data-widget="stat"]'
+        : '.link-card, [data-widget="stat"]';
+    document.querySelectorAll(sel).forEach(card => {
+        if (card.dataset.id === excludeId) return;
+        const d = cardData(card);
+        for (let r = d.row; r < d.row+d.rs; r++)
+            for (let c = d.col; c < d.col+d.cs; c++)
+                map[`${c},${r}`] = true;
+    });
+    return map;
+}
+
+function isFree(col, row, cs, rs, occupied) {
+    for (let r=row; r<row+rs; r++)
+        for (let c=col; c<col+cs; c++) {
+            if (c<1 || c>COLS) return false;
+            if (occupied[`${c},${r}`]) return false;
+        }
+    return true;
+}
+
+// ── Pixel → grid cell ─────────────────────────────────
+function pixelToGrid(clientX, clientY) {
+    const grid = document.getElementById('link-grid');
+    const rect = grid.getBoundingClientRect();
+    const step = CELL + GAP;
+    // With justify-content:center, columns are centered inside the grid container.
+    // Measure actual left edge of column 1 from the total content width.
+    const totalW = COLS * CELL + (COLS - 1) * GAP;
+    const innerLeft = rect.left + (rect.width - totalW) / 2;
+    const innerTop  = rect.top + 8;
+    const col = Math.max(1, Math.min(COLS, Math.floor((clientX - innerLeft) / step) + 1));
+    const row = Math.max(1, Math.floor((clientY - innerTop) / step) + 1);
+    return { col, row };
+}
+
+// ── Drag ──────────────────────────────────────────────
+let dragCard=null, dragOffX=0, dragOffY=0, dragOrigCol, dragOrigRow;
+
+function onDragHandleDown(e) {
+    if (!document.body.classList.contains('edit-active')) return;
+    if (e.button !== 0) return;
+    e.preventDefault();
+
+    dragCard = e.currentTarget.closest('.link-card, [data-widget="stat"]');
+    const d = cardData(dragCard);
+    dragOrigCol = d.col;
+    dragOrigRow = d.row;
+
+    const rect = dragCard.getBoundingClientRect();
+    dragOffX = e.clientX - rect.left;
+    dragOffY = e.clientY - rect.top;
+
+    dragCard.classList.add('dragging');
+    showGhost(d.col, d.row, d.cs, d.rs);
+
+    document.addEventListener('mousemove', onDragMove);
+    document.addEventListener('mouseup',   onDragEnd);
+}
+
+function onDragMove(e) {
+    if (!dragCard) return;
+    const d = cardData(dragCard);
+    const g = pixelToGrid(e.clientX - dragOffX, e.clientY - dragOffY);
+    const col = clamp(g.col, 1, COLS - d.cs + 1);
+    const row = Math.max(1, g.row);
+    showGhost(col, row, d.cs, d.rs);
+}
+
+function onDragEnd(e) {
+    if (!dragCard) return;
+    document.removeEventListener('mousemove', onDragMove);
+    document.removeEventListener('mouseup',   onDragEnd);
+
+    const d = cardData(dragCard);
+    const g = pixelToGrid(e.clientX - dragOffX, e.clientY - dragOffY);
+    let col = clamp(g.col, 1, COLS - d.cs + 1);
+    let row = Math.max(1, g.row);
+
+    const occupied = buildOccupied(d.id, true);
+    if (!isFree(col, row, d.cs, d.rs, occupied)) {
+        let found = false;
+        outer:
+        for (let dr=0; dr<=4; dr++) for (let dc=-3; dc<=3; dc++) {
+            const tc=clamp(col+dc,1,COLS-d.cs+1), tr=Math.max(1,row+dr);
+            if (isFree(tc,tr,d.cs,d.rs,occupied)){ col=tc; row=tr; found=true; break outer; }
+        }
+        if (!found){ col=dragOrigCol; row=dragOrigRow; }
+    }
+
+    applyPos(dragCard, col, row, d.cs, d.rs);
+    dragCard.classList.remove('dragging');
+    hideGhost();
+    dragCard = null;
+    persistAll();
+}
+
+// ── Resize ────────────────────────────────────────────
+let resizeCard=null, resizeStartX, resizeStartY, resizeOrigCs, resizeOrigRs, resizeOrigCol, resizeOrigRow;
+
+function onResizeDown(e) {
+    if (!document.body.classList.contains('edit-active')) return;
+    if (e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    resizeCard = e.currentTarget.closest('.link-card, [data-widget="stat"]');
+    const d = cardData(resizeCard);
+    resizeStartX=e.clientX; resizeStartY=e.clientY;
+    resizeOrigCs=d.cs; resizeOrigRs=d.rs;
+    resizeOrigCol=d.col; resizeOrigRow=d.row;
+
+    document.addEventListener('mousemove', onResizeMove);
+    document.addEventListener('mouseup',   onResizeEnd);
+}
+
+function onResizeMove(e) {
+    if (!resizeCard) return;
+    const step = CELL + GAP;
+    const deltaCs = Math.round((e.clientX - resizeStartX) / step);
+    const deltaRs = Math.round((e.clientY - resizeStartY) / step);
+    const minCs = resizeCard.dataset.widget === 'stat' ? 2 : 1;
+    const newCs = clamp(resizeOrigCs + deltaCs, minCs, COLS - resizeOrigCol + 1);
+    const newRs = Math.max(1, resizeOrigRs + deltaRs);
+
+    const occupied = buildOccupied(resizeCard.dataset.id, true);
+    if (isFree(resizeOrigCol, resizeOrigRow, newCs, newRs, occupied)) {
+        applyPos(resizeCard, resizeOrigCol, resizeOrigRow, newCs, newRs);
+    }
+}
+
+function onResizeEnd() {
+    if (!resizeCard) return;
+    document.removeEventListener('mousemove', onResizeMove);
+    document.removeEventListener('mouseup',   onResizeEnd);
+    resizeCard = null;
+    persistAll();
+}
+
+// ── Persist ───────────────────────────────────────────
+function persistAll() {
+    // App links → server
+    const items = [];
+    document.querySelectorAll('.link-card').forEach(card => {
+        const d = cardData(card);
+        items.push({ id:parseInt(d.id), grid_col:d.col, grid_row:d.row, col_span:d.cs, row_span:d.rs });
+    });
+    if (items.length) {
+        fetch('/save-layout', {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify(items)
+        }).then(r => {
+            if (r.status === 401 || r.status === 403 || r.redirected) {
+                window.location.href = '/login';
+            }
+        }).catch(()=>{});
+    }
+    // Stat widgets → localStorage
+    saveStatLayout();
+    // Sync originals so reclampCards restores to the latest user-saved positions
+    saveOriginalPositions();
+}
+
+// ── Wire up everything ────────────────────────────────
+function initGrid() {
+    readGridMetrics(); // must run first so COLS is correct
+
+    const half = Math.max(1, Math.floor(COLS / 2));
+    const cpuCard = document.getElementById('stat-cpu');
+    const ramCard = document.getElementById('stat-ram');
+
+    // Load saved layout and validate it against current COLS
+    // (clear stale data if saved col+span would overflow)
+    const saved = loadStatLayout();
+    const cpuSaved = saved['stat-cpu'];
+    const ramSaved = saved['stat-ram'];
+    const cpuValid = cpuSaved && cpuSaved.cs >= 2 && (cpuSaved.col + cpuSaved.cs - 1) <= COLS;
+    const ramValid = ramSaved && ramSaved.cs >= 2 && (ramSaved.col + ramSaved.cs - 1) <= COLS;
+
+    if (cpuCard && !cpuValid) {
+        cpuCard.dataset.colSpan = Math.max(2, half);
+        cpuCard.dataset.gridCol = 1;
+    }
+    if (ramCard && !ramValid) {
+        ramCard.dataset.colSpan = Math.max(2, COLS - half);
+        ramCard.dataset.gridCol = parseInt(cpuCard ? cpuCard.dataset.gridCol : 1) + parseInt(cpuCard ? cpuCard.dataset.colSpan : half) ;
+    }
+
+    applyStatLayout();
+
+    // Position the "Show RAM" placeholder so it never overlaps the CPU widget.
+    // The placeholder has no hardcoded style — we compute its column here.
+    const ramPlaceholder = document.getElementById('stat-ram-placeholder');
+    if (ramPlaceholder) {
+        const cpuCol  = cpuCard ? parseInt(cpuCard.dataset.gridCol)  : 1;
+        const cpuSpan = cpuCard ? parseInt(cpuCard.dataset.colSpan)  : half;
+        const startCol    = cpuCol + cpuSpan;
+        const remainCols  = Math.max(2, COLS - cpuSpan);
+        ramPlaceholder.style.gridColumn = startCol + '/span ' + remainCols;
+        ramPlaceholder.style.gridRow    = '1/span 1';
+    }
+
+    document.querySelectorAll('.link-card, [data-widget="stat"]').forEach(card => {
+        if (!parseInt(card.dataset.gridCol)) card.dataset.gridCol = 1;
+        if (!parseInt(card.dataset.gridRow)) card.dataset.gridRow = 1;
+        if (!parseInt(card.dataset.colSpan)) card.dataset.colSpan = 1;
+        if (!parseInt(card.dataset.rowSpan)) card.dataset.rowSpan = 1;
+
+        let col = parseInt(card.dataset.gridCol);
+        let row = parseInt(card.dataset.gridRow);
+        let cs  = parseInt(card.dataset.colSpan);
+        let rs  = parseInt(card.dataset.rowSpan);
+
+        // Clamp so nothing ever overflows the live column count
+        cs  = Math.min(cs, COLS);
+        col = Math.max(1, Math.min(col, COLS - cs + 1));
+
+        card.dataset.gridCol = col;
+        card.dataset.colSpan = cs;
+        card.style.gridColumn = `${col}/span ${cs}`;
+        card.style.gridRow    = `${row}/span ${rs}`;
+
+        const dh = card.querySelector(':scope > .drag-handle');
+        if (dh && !dh._vb) { dh._vb=true; dh.addEventListener('mousedown', onDragHandleDown); }
+
+        const rh = card.querySelector(':scope > .resize-handle');
+        if (rh && !rh._vb) { rh._vb=true; rh.addEventListener('mousedown', onResizeDown); }
+    });
+
+    // Resolve any link cards that overlap stat widgets
+    resolveStatConflicts();
+    // Snapshot final positions as "originals" for reclampCards to restore to
+    saveOriginalPositions();
+}
+
+// Move link cards that collide with stat widgets to the first free position
+function resolveStatConflicts() {
+    const statOccupied = {};
+    document.querySelectorAll('[data-widget="stat"]').forEach(w => {
+        const d = cardData(w);
+        for (let r = d.row; r < d.row + d.rs; r++)
+            for (let c = d.col; c < d.col + d.cs; c++)
+                statOccupied[`${c},${r}`] = true;
+    });
+
+    const toSave = [];
+    document.querySelectorAll('.link-card').forEach(card => {
+        const d = cardData(card);
+        let conflict = false;
+        outer: for (let r = d.row; r < d.row + d.rs; r++)
+            for (let c = d.col; c < d.col + d.cs; c++)
+                if (statOccupied[`${c},${r}`]) { conflict = true; break outer; }
+        if (!conflict) return;
+
+        // Find first free slot not occupied by anything
+        const occupied = buildOccupied(d.id, true);
+        place: for (let row = 1; row <= 200; row++) {
+            for (let col = 1; col <= COLS - d.cs + 1; col++) {
+                if (isFree(col, row, d.cs, d.rs, occupied)) {
+                    applyPos(card, col, row, d.cs, d.rs);
+                    // Mark as occupied so next card doesn't pick the same spot
+                    for (let r2 = row; r2 < row + d.rs; r2++)
+                        for (let c2 = col; c2 < col + d.cs; c2++)
+                            occupied[`${c2},${r2}`] = true;
+                    toSave.push({ id: parseInt(d.id), grid_col: col, grid_row: row, col_span: d.cs, row_span: d.rs });
+                    break place;
+                }
+            }
+        }
+    });
+
+    if (toSave.length > 0) {
+        fetch('/save-layout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(toSave)
+        }).catch(() => {});
+    }
+}
+
+window.initGrid = initGrid;
+
+// Keep batch-actions bar same width as the actual rendered grid content
+function syncBatchBarWidth() {
+    const grid = document.getElementById('link-grid');
+    const bar  = document.getElementById('batch-actions');
+    if (!grid || !bar) return;
+    readGridMetrics();
+    // Match the exact rendered width of the grid's content columns (+ 8px padding each side)
+    const totalW = COLS * CELL + (COLS - 1) * GAP + 16;
+    bar.style.width = totalW + 'px';
+}
+
+// Run initGrid and sync after first paint so grid dimensions are available
+requestAnimationFrame(() => {
+    initGrid();
+    syncBatchBarWidth();
+    applyDominantColors();
+});
+
+// Snapshot the current positions as "originals" (idempotent — only first call sets, later calls update)
+function saveOriginalPositions() {
+    document.querySelectorAll('.link-card, [data-widget="stat"]').forEach(card => {
+        card.dataset.origCol = card.dataset.gridCol || '1';
+        card.dataset.origRow = card.dataset.gridRow || '1';
+        card.dataset.origCs  = card.dataset.colSpan  || '1';
+        card.dataset.origRs  = card.dataset.rowSpan  || '1';
+    });
+}
+
+function reclampCards() {
+    readGridMetrics();
+    const cards = [...document.querySelectorAll('.link-card, [data-widget="stat"]')];
+    if (!cards.length) { syncBatchBarWidth(); return; }
+
+    // If every card fits at its saved (original) position, restore them all
+    const allFit = cards.every(card => {
+        const minCs = card.dataset.widget === 'stat' ? 2 : 1;
+        const cs  = Math.max(minCs, parseInt(card.dataset.origCs || card.dataset.colSpan) || 1);
+        const col = parseInt(card.dataset.origCol || card.dataset.gridCol) || 1;
+        return cs <= COLS && (col + cs - 1) <= COLS;
+    });
+
+    if (allFit) {
+        cards.forEach(card => {
+            const col = parseInt(card.dataset.origCol) || 1;
+            const row = parseInt(card.dataset.origRow) || 1;
+            const cs  = parseInt(card.dataset.origCs)  || 1;
+            const rs  = parseInt(card.dataset.origRs)  || 1;
+            card.dataset.gridCol = col;
+            card.dataset.colSpan = cs;
+            card.style.gridColumn = `${col}/span ${cs}`;
+            card.style.gridRow    = `${row}/span ${rs}`;
+        });
+    } else {
+        // Greedy pack: sort by original row then col, then place each card in the first free slot
+        cards.sort((a, b) => {
+            const ar = parseInt(a.dataset.origRow || a.dataset.gridRow) || 1;
+            const br = parseInt(b.dataset.origRow || b.dataset.gridRow) || 1;
+            if (ar !== br) return ar - br;
+            return ((parseInt(a.dataset.origCol || a.dataset.gridCol) || 1) -
+                    (parseInt(b.dataset.origCol || b.dataset.gridCol) || 1));
+        });
+
+        const occ = {};
+        const markOcc = (col, row, cs, rs) => {
+            for (let r = row; r < row + rs; r++)
+                for (let c = col; c < col + cs; c++)
+                    occ[`${c},${r}`] = true;
+        };
+        const isFreeLocal = (col, row, cs, rs) => {
+            for (let r = row; r < row + rs; r++)
+                for (let c = col; c < col + cs; c++) {
+                    if (c < 1 || c > COLS) return false;
+                    if (occ[`${c},${r}`]) return false;
+                }
+            return true;
+        };
+
+        cards.forEach(card => {
+            const minCs = card.dataset.widget === 'stat' ? 2 : 1;
+            const cs = Math.max(minCs, Math.min(parseInt(card.dataset.origCs || card.dataset.colSpan) || 1, COLS));
+            const rs = parseInt(card.dataset.origRs || card.dataset.rowSpan) || 1;
+            outer: for (let row = 1; row <= 200; row++) {
+                for (let col = 1; col <= COLS - cs + 1; col++) {
+                    if (isFreeLocal(col, row, cs, rs)) {
+                        markOcc(col, row, cs, rs);
+                        card.dataset.gridCol = col;
+                        card.dataset.colSpan = cs;
+                        card.style.gridColumn = `${col}/span ${cs}`;
+                        card.style.gridRow    = `${row}/span ${rs}`;
+                        break outer;
+                    }
+                }
+            }
+        });
+    }
+
+    syncBatchBarWidth();
+}
+
+new ResizeObserver(() => { reclampCards(); }).observe(document.getElementById('link-grid'));
+
+// ── Batch select ──────────────────────────────────────
+document.addEventListener('click', function(e) {
+    if (!document.body.classList.contains('edit-active')) return;
+    const card = e.target.closest('.link-card');
+    if (!card || e.target.closest('.edit-btn') || e.target.closest('.resize-handle') || e.target.closest('.drag-handle')) return;
+    const cb = card.querySelector('.link-checkbox');
+    cb.checked = !cb.checked;
+    card.classList.toggle('selected', cb.checked);
+    updateBatchActions();
+});
+
+})();
+
+function toggleEditMode() {
+    // Block edit mode while a search is active
+    const searchInput = document.getElementById('app-search');
+    if (searchInput && searchInput.value.trim() !== '') return;
+
+    document.body.classList.toggle('edit-active');
+    updateBatchActions();
+    const btn = document.getElementById('editBtn');
+    const isEdit = document.body.classList.contains('edit-active');
+    if (isEdit) {
+        btn.classList.add('bg-blue-600','text-white','border-blue-500/40');
+        btn.classList.remove('bg-slate-800','border-white/5');
+        btn.innerHTML=`<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>`;
+    } else {
+        btn.classList.remove('bg-blue-600','text-white','border-blue-500/40');
+        btn.classList.add('bg-slate-800','border-white/5');
+        btn.innerHTML=`<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>`;
+        // Sync title/subtitle display text from current input values
+        const isCompact = document.body.classList.contains('compact-mode');
+        const activeForm = isCompact ? '#settingsFormCompact' : '#settingsFormMain';
+        const titleInput = document.querySelector(activeForm + ' [name="dashboard_title"]');
+        const subtitleInput = document.querySelector('#settingsFormMain [name="dashboard_subtitle"]');
+        if (titleInput) {
+            const h1 = document.querySelector('#settingsFormMain .header-normal-view h1');
+            if (h1) h1.textContent = titleInput.value;
+            const compactSpan = document.querySelector('#settingsFormCompact .header-normal-view span');
+            if (compactSpan) compactSpan.childNodes[0].textContent = titleInput.value;
+            // Keep non-active form's input in sync for next toggle
+            document.querySelectorAll('[name="dashboard_title"]').forEach(el => el.value = titleInput.value);
+        }
+        if (subtitleInput) {
+            const p = document.querySelector('#settingsFormMain .header-normal-view p');
+            if (p) p.textContent = subtitleInput.value;
+        }
+        clearSelection();
+    }
+}
+
+function updateBatchActions() {
+    const sel    = document.querySelectorAll('.link-checkbox:checked');
+    const count  = sel.length;
+    const delBtn = document.querySelector('#batch-actions button[type="button"]');
+    document.getElementById('selection-count').textContent = `${count} Selected`;
+    if (delBtn) {
+        delBtn.disabled = count === 0;
+        delBtn.classList.toggle('opacity-40',   count === 0);
+        delBtn.classList.toggle('cursor-not-allowed', count === 0);
+        delBtn.classList.toggle('pointer-events-none', count === 0);
+    }
+}
+function selectAll() {
+    document.querySelectorAll('.link-card').forEach(c=>{c.querySelector('.link-checkbox').checked=true;c.classList.add('selected');});
+    updateBatchActions();
+}
+function clearSelection() {
+    document.querySelectorAll('.link-card').forEach(c=>{c.querySelector('.link-checkbox').checked=false;c.classList.remove('selected');});
+    updateBatchActions();
+}
+
+// ── App search / filter ───────────────────────────────
+function filterApps(query) {
+    const q = query.trim().toLowerCase();
+    const grid      = document.getElementById('link-grid');
+    const clearBtn  = document.getElementById('app-search-clear');
+    const emptyState = document.getElementById('search-empty');
+    const emptyTerm  = document.getElementById('search-empty-term');
+
+    if (clearBtn) clearBtn.classList.toggle('hidden', q === '');
+    document.body.classList.toggle('search-active', q !== '');
+
+    // Ensure the search-results list container exists right after link-grid
+    let results = document.getElementById('search-results');
+    if (!results) {
+        results = document.createElement('div');
+        results.id = 'search-results';
+        grid.parentNode.insertBefore(results, grid.nextSibling);
+    }
+
+    if (q === '') {
+        grid.style.display    = '';
+        results.style.display = 'none';
+        results.innerHTML     = '';
+        if (emptyState) { emptyState.classList.add('hidden'); emptyState.style.display = ''; }
+        return;
+    }
+
+    // Collect all app cards and filter
+    const cards   = Array.from(grid.querySelectorAll('.link-card'));
+    const matches = cards.filter(c => {
+        const name = (c.dataset.name || '').toLowerCase();
+        const url  = (c.dataset.url  || '').toLowerCase();
+        return name.includes(q) || url.includes(q);
+    });
+
+    // Hide positioned grid, show list
+    grid.style.display    = 'none';
+    results.style.display = '';
+    results.className     = 'flex flex-col gap-2 mb-4 animate-fade-in';
+    results.innerHTML     = '';
+
+    function esc(s) {
+        return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    matches.forEach(card => {
+        const name    = card.dataset.name || '';
+        const url     = card.dataset.url  || '';
+        const img     = card.querySelector('img');
+        const iconSrc = img ? img.getAttribute('src') : '/static/default-icon.png';
+
+        const row = document.createElement('a');
+        row.href   = url;
+        row.target = '_blank';
+        row.rel    = 'noopener noreferrer';
+        row.className = 'flex items-center gap-3.5 px-4 py-3 bg-slate-950/40 rounded-xl border border-white/5 hover:border-white/10 hover:bg-slate-800/30 transition-colors group';
+        row.innerHTML = `
+            <div class="w-9 h-9 shrink-0 flex items-center justify-center">
+                <img src="${esc(iconSrc)}" alt="${esc(name)}" class="w-full h-full object-contain drop-shadow-md"
+                     onerror="this.src='/static/default-icon.png'">
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="font-semibold text-sm text-white truncate">${esc(name)}</p>
+                <p class="text-xs text-slate-500 truncate">${esc(url)}</p>
+            </div>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-600 group-hover:text-slate-400 transition-colors shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+            </svg>`;
+        results.appendChild(row);
+    });
+
+    if (emptyState) {
+        const show = cards.length > 0 && matches.length === 0;
+        emptyState.classList.toggle('hidden', !show);
+        emptyState.style.display = show ? 'flex' : '';
+        if (emptyTerm) emptyTerm.textContent = '"' + query.trim() + '"';
+    }
+}
+
+// ── Add modal close after successful save ─────────────
+(function() {
+    var form = document.getElementById('addForm');
+    if (form) {
+        form.addEventListener('htmx:afterRequest', function(e) {
+            if (e.detail.successful) {
+                form.reset();
+                document.getElementById('addModal').close();
+                initGrid();
+                applyDominantColors();
+            }
+        });
+    }
+})();
+
+// ── Dominant colour extraction ─────────────────────────
+function setCardColor(card, r, g, b) {
+    card.style.setProperty('--dc-r', r);
+    card.style.setProperty('--dc-g', g);
+    card.style.setProperty('--dc-b', b);
+}
+
+function sampleCardColor(card) {
+    const img = card.querySelector('.app-link img');
+    if (!img || !img.src || img.src.includes('default-icon')) {
+        setCardColor(card, 59, 130, 246);
+        return;
+    }
+    const probe = new Image();
+    probe.crossOrigin = 'anonymous';
+    probe.onload = () => {
+        try {
+            const canvas = document.createElement('canvas');
+            canvas.width = canvas.height = 24;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(probe, 0, 0, 24, 24);
+            const data = ctx.getImageData(0, 0, 24, 24).data;
+            let r = 0, g = 0, b = 0, count = 0;
+            for (let i = 0; i < data.length; i += 4) {
+                if (data[i + 3] < 64) continue; // skip near-transparent
+                r += data[i]; g += data[i + 1]; b += data[i + 2];
+                count++;
+            }
+            if (count > 0) {
+                setCardColor(card, Math.round(r / count), Math.round(g / count), Math.round(b / count));
+            } else {
+                setCardColor(card, 59, 130, 246);
+            }
+        } catch (e) {
+            setCardColor(card, 59, 130, 246);
+        }
+    };
+    probe.onerror = () => setCardColor(card, 59, 130, 246);
+    probe.src = img.src;
+}
+
+function applyDominantColors() {
+    document.querySelectorAll('.link-card').forEach(card => sampleCardColor(card));
+}
+
+// Keyboard shortcut: / to focus search (unless already in an input)
+document.addEventListener('keydown', function(e) {
+    if (e.key === '/' && !['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) {
+        e.preventDefault();
+        const s = document.getElementById('app-search');
+        if (s) { s.focus(); s.select(); }
+    }
+    if (e.key === 'Escape') {
+        const s = document.getElementById('app-search');
+        if (s && document.activeElement === s) {
+            filterApps('');
+            s.value = '';
+            s.blur();
+        }
+    }
+});
+</script>
+
+<!-- Bulk Delete Confirmation Modal -->
+<dialog id="bulkDeleteModal" class="bg-slate-900 border border-white/10 rounded-2xl shadow-2xl shadow-black p-0 backdrop-blur-xl text-white w-full max-w-sm my-auto mx-auto translate-y-[-50px] transition-all open:translate-y-0 open:opacity-100 opacity-0 m-auto fixed inset-0 z-50">
+    <div class="p-6">
+        <div class="flex flex-col items-center text-center mb-6 pt-2">
+            <div class="w-16 h-16 rounded-full bg-red-500/20 flex shrink-0 items-center justify-center mb-4 text-red-500 drop-shadow-[0_0_15px_rgba(239,68,68,0.3)]">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+            </div>
+            <h2 class="text-2xl font-bold mb-2">Delete Apps?</h2>
+            <p class="text-slate-400">Are you sure you want to remove the <strong id="bulkDeleteCount" class="text-white"></strong> selected app(s) from your dashboard? This action cannot be undone.</p>
+        </div>
+        <div class="flex gap-4">
+            <button type="button" onclick="document.getElementById('bulkDeleteModal').close()"
+                    class="flex-1 py-3 bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-medium rounded-xl transition-all border border-white/5">
+                Cancel
+            </button>
+            <button type="button" onclick="document.getElementById('bulkDeleteModal').close(); document.getElementById('delete-form').requestSubmit();"
+                    class="flex-1 py-3 bg-red-600 hover:bg-red-500 active:scale-95 text-white font-bold rounded-xl transition-all shadow-lg shadow-red-500/20 border border-red-500/50">
+                Delete
+            </button>
+        </div>
+    </div>
+</dialog>
+
+<div id="modals-container"></div>
+

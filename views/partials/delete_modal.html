@@ -1,0 +1,30 @@
+<dialog id="deleteModal" class="bg-slate-900 border border-white/10 rounded-2xl shadow-2xl shadow-black p-0 backdrop-blur-xl text-white w-full max-w-sm my-auto mx-auto translate-y-[-50px] transition-all open:translate-y-0 open:opacity-100 opacity-0 m-auto fixed inset-0 z-50">
+    <div class="p-6">
+        <div class="flex flex-col items-center text-center mb-6 pt-2">
+            <div class="w-16 h-16 rounded-full bg-red-500/20 flex flex-shrink-0 items-center justify-center mb-4 text-red-500 drop-shadow-[0_0_15px_rgba(239,68,68,0.3)]">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+            </div>
+            <h2 class="text-2xl font-bold mb-2">Delete App?</h2>
+            <p class="text-slate-400">Are you sure you want to remove <strong class="text-white">{{.Name}}</strong> from your dashboard? This action cannot be undone.</p>
+        </div>
+
+        <div class="flex gap-4">
+            <button onclick="document.getElementById('deleteModal').close()" class="flex-1 py-3 bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-medium rounded-xl transition-all border border-white/5">
+                Cancel
+            </button>
+            <button hx-delete="/remove-link/{{.ID}}"
+                    hx-target="#link-{{.ID}}"
+                    hx-swap="outerHTML swap:0.3s"
+                    hx-on::after-request="document.getElementById('deleteModal').close()"
+                    class="flex-1 py-3 bg-red-600 hover:bg-red-500 active:scale-95 text-white font-bold rounded-xl transition-all shadow-lg shadow-red-500/20 border border-red-500/50">
+                Delete
+            </button>
+        </div>
+    </div>
+</dialog>
+
+<script>
+    document.getElementById('deleteModal').showModal();
+</script>

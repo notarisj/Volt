@@ -1,0 +1,71 @@
+# Binaries and build output
+volt
+volt.exe
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.out
+dist/
+bin/
+
+# Go specific
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+*.prof
+
+# Dependency vendoring
+vendor/
+
+# Go workspace file
+go.work
+go.work.sum
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Uploads directory (user-generated content)
+uploads/
+!uploads/.gitkeep
+
+# Demo uploads (keep demo data structure but not files)
+demo/uploads/
+!demo/uploads/.gitkeep
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V8
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Editor and IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Docker
+.dockerignore
+
+# Logs
+*.log
+logs/

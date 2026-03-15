@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Volt - Lightning Fast Links</title>
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
+
+    <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous"></script>
+    <script>
+        // Redirect to login on any HTMX response that signals unauthenticated (401)
+        document.addEventListener("htmx:responseError", function(evt) {
+            if (evt.detail.xhr.status === 401 || evt.detail.xhr.status === 403) {
+                window.location.href = "/login";
+            }
+        });
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#fdf8f6',
+                            100: '#f2e8e5',
+                            200: '#eaddd7',
+                            300: '#e0cec7',
+                            400: '#d2bab0',
+                            500: '#a3a3a3',
+                            600: '#8b8b8b',
+                            700: '#6d6d6d',
+                            800: '#4e4e4e',
+                            900: '#0f172a',
+                            accent: '#3b82f6',
+                            alert: '#ef4444',
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.3s ease-out forwards',
+                        'slide-up': 'slideUp 0.4s ease-out forwards',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        :root {
+            --card-bg: rgba(15, 23, 42, 0.4);
+            --card-border: rgba(255, 255, 255, 0.05);
+            --card-hover-border: rgba(59, 130, 246, 0.3);
+            --card-hover-shadow: rgba(59, 130, 246, 0.2);
+            --card-gradient-from: rgba(15, 23, 42, 0.9);
+            --card-text: #ffffff;
+            --card-url: #93c5fd;
+        }
+
+        body.theme-light {
+            --card-bg: rgba(255, 255, 255, 0.8);
+            --card-border: rgba(0, 0, 0, 0.05);
+            --card-hover-border: rgba(59, 130, 246, 0.2);
+            --card-hover-shadow: rgba(59, 130, 246, 0.15);
+            --card-gradient-from: rgba(255, 255, 255, 0.95);
+            --card-text: #0f172a;
+            --card-url: #2563eb;
+
+            background-color: #f1f5f9;
+            background-image: radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.05) 0px, transparent 50%),
+                              radial-gradient(at 100% 0%, rgba(147, 51, 234, 0.05) 0px, transparent 50%);
+            color: #0f172a;
+        }
+
+        .htmx-swapping {
+            opacity: 0;
+            transition: opacity 0.3s ease-out;
+        }
+
+        body.compact-mode .navbar-logo-normal { display: none !important; }
+        body.compact-mode .navbar-title-compact { display: flex !important; }
+        body.compact-mode .dashboard-main-header { display: none !important; }
+
+        body:not(.compact-mode) .navbar-logo-normal { display: flex !important; }
+        body:not(.compact-mode) .navbar-title-compact { display: none !important; }
+        body:not(.compact-mode) .dashboard-main-header { display: flex !important; }
+
+        body.animations-false *,
+        body.animations-false *::before,
+        body.animations-false *::after {
+            animation: none !important;
+            transition: none !important;
+        }
+        body.animations-false .link-card:hover {
+            transform: none !important;
+        }
+
+        /* Taller cards (row-span >= 2): icon stays in place on hover, title fades in below */
+        .link-card.tall-card:hover .w-14 {
+            --tw-translate-y: 0px !important;
+        }
+
+        /* Dynamic title-fit expansion */
+        .link-card {
+            transition: width 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .link-card.expanding {
+            width: var(--expanded-width) !important;
+            z-index: 40;
+        }
+        .link-card.expanding .link-card-inner {
+            overflow: visible;
+        }
+
+        /* ── Light theme overrides ── */
+        body.theme-light .bg-slate-950 { background-color: transparent; }
+        body.theme-light .bg-slate-950\/50 { background-color: rgba(255,255,255,0.8); border-bottom-color: rgba(0,0,0,0.07) !important; }
+        body.theme-light .bg-slate-900 { background-color: #ffffff !important; }
+        body.theme-light .border-white\/5,
+        body.theme-light .border-white\/8,
+        body.theme-light .border-white\/10 { border-color: rgba(0,0,0,0.08) !important; }
+        body.theme-light .text-white { color: #0f172a; }
+        body.theme-light .text-slate-100 { color: #1e293b; }
+        body.theme-light .text-slate-300,
+        body.theme-light .text-slate-400 { color: #64748b; }
+        body.theme-light .text-slate-500 { color: #94a3b8; }
+        body.theme-light .bg-slate-800 { background-color: #e8edf3 !important; color: #475569 !important; border-color: rgba(0,0,0,0.07) !important; }
+        body.theme-light .bg-slate-800:hover { background-color: #dce3ec !important; color: #0f172a !important; }
+        body.theme-light .bg-slate-950\/40 { background-color: rgba(241,245,249,0.7) !important; }
+        body.theme-light .bg-slate-950\/60 { background-color: rgba(255,255,255,0.95) !important; border-color: rgba(0,0,0,0.07) !important; }
+        body.theme-light .from-white { --tw-gradient-from: #0f172a; --tw-gradient-to: #475569; }
+        body.theme-light .text-transparent.bg-clip-text { color: #0f172a; background-image: none; }
+
+        /* Navbar search input */
+        body.theme-light #app-search { background-color: rgba(0,0,0,0.04) !important; color: #0f172a !important; border-color: rgba(0,0,0,0.09) !important; }
+        body.theme-light #app-search::placeholder { color: #94a3b8 !important; }
+        body.theme-light #app-search-clear { color: #94a3b8 !important; }
+        body.theme-light .bg-slate-900\/80 { background-color: rgba(0,0,0,0.04) !important; }
+
+        /* Stat widget cards */
+        body.theme-light .stat-card {
+            background: #ffffff !important;
+            border-color: rgba(0,0,0,0.08) !important;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.07) !important;
+            color: #0f172a !important;
+        }
+        body.theme-light .stat-card--cpu {
+            background: linear-gradient(145deg, #ffffff, rgba(74,222,128,0.07)) !important;
+            border-color: rgba(74,222,128,0.3) !important;
+            box-shadow: 0 0 0 1px rgba(74,222,128,0.12), 0 4px 16px rgba(0,0,0,0.06) !important;
+        }
+        body.theme-light .stat-card--ram {
+            background: linear-gradient(145deg, #ffffff, rgba(251,191,36,0.07)) !important;
+            border-color: rgba(251,191,36,0.3) !important;
+            box-shadow: 0 0 0 1px rgba(251,191,36,0.12), 0 4px 16px rgba(0,0,0,0.06) !important;
+        }
+        body.theme-light .stat-card .text-slate-400,
+        body.theme-light .stat-card .text-slate-500 { color: #64748b !important; }
+
+        /* Stat placeholder (edit mode) */
+        body.theme-light .stat-show-placeholder { border-color: rgba(0,0,0,0.15) !important; color: rgba(0,0,0,0.3) !important; }
+        body.theme-light .stat-show-placeholder:hover { border-color: rgba(0,0,0,0.28) !important; color: rgba(0,0,0,0.5) !important; }
+
+        /* Search results list */
+        body.theme-light #search-results a { background-color: rgba(255,255,255,0.85) !important; border-color: rgba(0,0,0,0.07) !important; }
+        body.theme-light #search-results a:hover { background-color: #f1f5f9 !important; border-color: rgba(0,0,0,0.11) !important; }
+        body.theme-light #search-results a .text-slate-500 { color: #94a3b8 !important; }
+
+        /* Batch-actions bar */
+        body.theme-light #batch-actions > div { background-color: rgba(255,255,255,0.9) !important; border-color: rgba(0,0,0,0.08) !important; }
+
+        /* Preferences tab active state */
+        body.theme-light .pref-tab { color: #64748b !important; }
+        body.theme-light .pref-tab:hover { color: #0f172a !important; }
+        body.theme-light .pref-tab.active-tab { color: #0f172a !important; border-bottom-color: #3b82f6 !important; }
+        body.theme-light #prefTabBar { border-bottom-color: rgba(0,0,0,0.08) !important; }
+
+        /* Hover state for red logout/delete buttons */
+        body.theme-light .hover\:bg-red-500\/20:hover { background-color: rgba(239,68,68,0.09) !important; }
+        body.theme-light .hover\:border-red-500\/20:hover { border-color: rgba(239,68,68,0.2) !important; }
+
+        .link-card {
+            background-color: var(--card-bg) !important;
+            border-color: var(--card-border) !important;
+        }
+        .link-card:hover {
+            border-color: rgba(var(--dc-r,59), var(--dc-g,130), var(--dc-b,246), 0.3) !important;
+            box-shadow: 0 4px 24px -2px rgba(var(--dc-r,59), var(--dc-g,130), var(--dc-b,246), 0.2) !important;
+        }
+
+        body.theme-light .link-card-inner {
+            background: linear-gradient(145deg, rgba(255,255,255,0.92), rgba(var(--dc-r,59), var(--dc-g,130), var(--dc-b,246), 0.06)) !important;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: 2px solid rgba(59, 130, 246, 0.4) !important;
+            outline-offset: 2px;
+            border-color: rgba(59, 130, 246, 0.5) !important;
+        }
+
+        button:focus-visible,
+        a:focus-visible {
+            outline: 2px solid rgb(59, 130, 246) !important;
+            outline-offset: 4px;
+        }
+
+        input, select, textarea {
+            transition: border-color 0.2s ease, background-color 0.2s ease !important;
+        }
+
+        /* Popover reset — strip browser defaults, we supply all styling */
+        #dash-popover, #logout-popover {
+            border: none;
+            padding: 0;
+            background: transparent;
+            margin: 0;
+            position: fixed;
+            overflow: visible;
+            color: inherit;
+        }
+        #dash-popover:popover-open, #logout-popover:popover-open {
+            display: block;
+        }
+        #dash-popover > div, #logout-popover > div {
+            opacity: 0;
+            transform: translateY(-6px) scale(0.97);
+            transition: opacity 0.15s ease, transform 0.15s ease;
+        }
+        #dash-popover:popover-open > div, #logout-popover:popover-open > div {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-brand-accent selection:text-white antialiased relative overflow-x-hidden {{if eq (index .Settings "is_compact_mode") "true"}}compact-mode{{end}} theme-{{index .Settings "theme_mode"}} animations-{{index .Settings "animations_enabled"}}">
+    <div class="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
+        <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-blue-900/20 blur-[100px] animate-pulse-slow"></div>
+        <div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-purple-900/20 blur-[100px] animate-pulse-slow" style="animation-delay: 1.5s;"></div>
+    </div>
+
+    <nav class="border-b border-white/5 bg-slate-950/50 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-3 items-center h-16 gap-4">
+                <div class="flex items-center gap-2 min-w-0">
+                    <a href="/" class="navbar-logo-normal flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer shrink-0">
+                        <img src="/static/logo.png" alt="Volt Logo" class="w-8 h-8 object-contain drop-shadow-md shrink-0">
+                        <span class="font-bold text-xl tracking-tight text-white">Volt<span class="text-blue-400">.</span></span>
+                    </a>
+
+                    <form id="settingsFormCompact" hx-post="/edit-settings" hx-swap="none" hx-trigger="keyup changed delay:500ms from:input" class="navbar-title-compact flex-1 max-w-sm m-0 hidden">
+                        <div class="header-normal-view flex items-center gap-3">
+                            <a href="/" class="flex flex-row items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer">
+                                <img src="/static/logo.png" alt="Volt Logo" class="w-8 h-8 object-contain drop-shadow-md shrink-0">
+                                <span class="font-bold text-xl tracking-tight text-white truncate">{{index .Settings "dashboard_title"}}<span class="text-blue-400">.</span></span>
+                            </a>
+                        </div>
+                        <div class="header-edit-view hidden items-center gap-3 w-full">
+                            <img src="/static/logo.png" alt="Volt Logo" class="w-8 h-8 object-contain drop-shadow-md shrink-0">
+                            <input type="text" name="dashboard_title" value="{{index .Settings "dashboard_title"}}" placeholder="Dashboard Title"
+                                class="w-full px-3 py-1 bg-slate-900 border border-white/10 rounded-lg text-white font-bold text-lg placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-all">
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Search -->
+                <div class="flex justify-center">
+                    <div class="relative w-full">
+                        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                            <svg class="h-4 w-4 text-slate-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z"/>
+                            </svg>
+                        </div>
+                        <input id="app-search"
+                               type="text"
+                               placeholder="Search apps..."
+                               autocomplete="off"
+                               oninput="filterApps(this.value)"
+                               class="w-full pl-9 pr-8 py-1.5 bg-slate-900/80 border border-white/8 rounded-full text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500/40 focus:bg-slate-900 transition-all">
+                        <button id="app-search-clear"
+                                type="button"
+                                onclick="filterApps(''); document.getElementById('app-search').value=''; this.classList.add('hidden');"
+                                class="hidden absolute inset-y-0 right-0 flex items-center pr-3 text-slate-500 hover:text-white transition-colors">
+                            <svg class="h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3 justify-end">
+                    <!-- Dashboard switcher -->
+                    {{with .Dashboard}}
+                    <button id="dash-switcher-btn"
+                            class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-medium transition-colors shrink-0 border border-white/5 max-w-[140px]">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                        </svg>
+                        <span class="truncate">{{.Name}}</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 shrink-0 opacity-50 transition-transform duration-200" id="dash-chevron" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    {{end}}
+
+                    <!-- Dashboard popover -->
+                    <div id="dash-popover" popover>
+                        <div class="bg-slate-900 border border-white/10 rounded-2xl shadow-2xl shadow-black overflow-hidden w-56">
+
+                            <div class="px-4 pt-3.5 pb-2">
+                                <p class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Dashboards</p>
+                            </div>
+
+                            <div class="flex flex-col px-2 pb-2 gap-0.5">
+                                {{range $.Dashboards}}
+                                {{if eq .ID $.Dashboard.ID}}
+                                <div class="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-blue-600/15 border border-blue-500/20 text-white cursor-default">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-blue-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    <span class="text-sm font-medium truncate">{{.Name}}</span>
+                                </div>
+                                {{else}}
+                                <button hx-post="/dashboards/switch/{{.ID}}"
+                                        onclick="document.getElementById('dash-popover').hidePopover()"
+                                        class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors text-left w-full">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 shrink-0 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                                    </svg>
+                                    <span class="text-sm font-medium truncate">{{.Name}}</span>
+                                </button>
+                                {{end}}
+                                {{end}}
+                            </div>
+
+                            <div class="border-t border-white/5 px-2 py-2">
+                                <button hx-get="/dashboards/panel" hx-target="#modals-container" hx-swap="innerHTML"
+                                        onclick="document.getElementById('dash-popover').hidePopover()"
+                                        class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors w-full text-left">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                                    </svg>
+                                    <span class="text-sm font-medium">Manage Dashboards</span>
+                                </button>
+                            </div>
+
+                        </div>
+                    </div>
+                    <button hx-get="/settings" hx-target="#modals-container" hx-swap="innerHTML" title="Settings" class="flex items-center justify-center p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors border border-white/5">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                    </button>
+                    <button onclick="toggleEditMode()" id="editBtn" title="Edit App Layout" class="flex items-center justify-center p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors border border-white/5">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        </svg>
+                    </button>
+                    <button onclick="document.getElementById('addModal').showModal()" title="Add Application" class="flex items-center justify-center p-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white transition-colors border border-blue-500/40">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                    <button id="logout-btn" title="Sign Out" class="flex items-center justify-center p-1.5 rounded-lg bg-slate-800 hover:bg-red-500/20 text-slate-300 hover:text-red-400 transition-all border border-white/5 hover:border-red-500/20">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                    </button>
+
+                    <!-- Logout confirmation popover -->
+                    <div id="logout-popover" popover>
+                        <div class="bg-slate-900 border border-white/10 rounded-2xl shadow-2xl shadow-black overflow-hidden w-52">
+                            <div class="px-4 pt-3.5 pb-3">
+                                <p class="text-sm font-semibold text-white mb-0.5">Sign out?</p>
+                                <p class="text-xs text-slate-500">You'll need to log in again to access your dashboard.</p>
+                            </div>
+                            <div class="border-t border-white/5 px-2 py-2 flex flex-col gap-0.5">
+                                <a href="/logout"
+                                   class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-red-400 hover:text-white hover:bg-red-600 transition-colors w-full text-left">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                    </svg>
+                                    <span class="text-sm font-medium">Sign Out</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 animate-fade-in relative z-10 transition-all duration-300">
+        {{embed}}
+    </main>
+
+    <script>
+        function initLinkCards() {
+            document.querySelectorAll('.link-card').forEach(function(card) {
+                // Tall card tagging
+                var rowSpan = parseInt(card.getAttribute('data-row-span'), 10);
+                card.classList.toggle('tall-card', rowSpan >= 2);
+
+                // Avoid double-binding
+                if (card._voltInitialized) return;
+                card._voltInitialized = true;
+
+                card.addEventListener('mouseenter', function() {
+                    if (document.body.classList.contains('edit-active')) return;
+
+                    var title = card.querySelector('.app-title');
+                    if (!title) return;
+
+                    // Measure how wide the title wants to be vs the card's current inner width
+                    var cardInner = card.querySelector('.link-card-inner');
+                    var currentWidth = card.getBoundingClientRect().width;
+                    var availableWidth = cardInner ? cardInner.getBoundingClientRect().width : currentWidth;
+                    var padding = 24; // px-3 on each side = 12px * 2
+                    var titleWidth = title.scrollWidth + padding;
+
+                    if (titleWidth <= availableWidth) return; // fits fine, nothing to do
+
+                    var expandedWidth = currentWidth + (titleWidth - availableWidth);
+
+                    // Store the natural (collapsed) width so mouseleave can animate back to it
+                    card._naturalWidth = currentWidth;
+
+                    // Pin the current width explicitly so the browser has a concrete
+                    // from-value to interpolate from, then let the transition run.
+                    card.style.setProperty('--expanded-width', currentWidth + 'px');
+                    card.classList.add('expanding');
+                    // Force reflow so the browser registers the starting width
+                    card.getBoundingClientRect();
+                    card.style.setProperty('--expanded-width', expandedWidth + 'px');
+                });
+
+                card.addEventListener('mouseleave', function() {
+                    if (!card.classList.contains('expanding')) return;
+
+                    var naturalWidth = card._naturalWidth || card.getBoundingClientRect().width;
+
+                    // Animate back to the natural width, then drop the class once done
+                    card.style.setProperty('--expanded-width', naturalWidth + 'px');
+
+                    function onTransitionEnd(e) {
+                        if (e.propertyName !== 'width') return;
+                        card.removeEventListener('transitionend', onTransitionEnd);
+                        card.classList.remove('expanding');
+                    }
+                    card.addEventListener('transitionend', onTransitionEnd);
+                });
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', initLinkCards);
+        document.addEventListener('htmx:afterSwap', initLinkCards);
+        document.addEventListener('htmx:afterSettle', initLinkCards);
+
+        // Close any <dialog> when clicking on its backdrop (outside the dialog box).
+        // Works for all modals: settings, dashboard panel, add, edit, delete, etc.
+        document.addEventListener('click', function(e) {
+            if (e.target.tagName !== 'DIALOG') return;
+            var rect = e.target.getBoundingClientRect();
+            var clickedInside = (
+                e.clientX >= rect.left && e.clientX <= rect.right &&
+                e.clientY >= rect.top  && e.clientY <= rect.bottom
+            );
+            if (!clickedInside) e.target.close();
+        });
+    </script>
+
+    <script>
+    (function () {
+        var popover = document.getElementById('dash-popover');
+        var btn     = document.getElementById('dash-switcher-btn');
+        var chevron = document.getElementById('dash-chevron');
+        if (!popover || !btn) return;
+
+        function position() {
+            var r = btn.getBoundingClientRect();
+            popover.style.top  = (r.bottom + 8) + 'px';
+            popover.style.left = Math.max(8, r.right - 224) + 'px'; // 224 = w-56
+        }
+
+        btn.addEventListener('click', function () {
+            if (popover.matches(':popover-open')) {
+                popover.hidePopover();
+            } else {
+                position();
+                popover.showPopover();
+            }
+        });
+
+        window.addEventListener('resize', function () {
+            if (popover.matches(':popover-open')) position();
+        });
+
+        popover.addEventListener('toggle', function (e) {
+            if (chevron) chevron.style.transform = e.newState === 'open' ? 'rotate(180deg)' : '';
+        });
+
+        // Logout popover
+        var logoutPopover = document.getElementById('logout-popover');
+        var logoutBtn     = document.getElementById('logout-btn');
+        if (logoutPopover && logoutBtn) {
+            logoutBtn.addEventListener('click', function () {
+                if (logoutPopover.matches(':popover-open')) {
+                    logoutPopover.hidePopover();
+                } else {
+                    var r = logoutBtn.getBoundingClientRect();
+                    logoutPopover.style.top  = (r.bottom + 8) + 'px';
+                    logoutPopover.style.left = Math.max(8, r.right - 208) + 'px'; // 208 = w-52
+                    logoutPopover.showPopover();
+                }
+            });
+            window.addEventListener('resize', function () {
+                if (logoutPopover.matches(':popover-open')) {
+                    var r = logoutBtn.getBoundingClientRect();
+                    logoutPopover.style.top  = (r.bottom + 8) + 'px';
+                    logoutPopover.style.left = Math.max(8, r.right - 208) + 'px';
+                }
+            });
+        }
+    })();
+    </script>
+
+    <footer class="text-center py-3">
+        <span class="text-xs text-slate-600 font-mono">{{.Version}}</span>
+    </footer>
+
+</body>
+</html>

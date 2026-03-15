@@ -1,0 +1,63 @@
+<dialog id="editModal" class="bg-slate-900 border border-white/10 rounded-2xl shadow-2xl shadow-black p-0 backdrop-blur-xl text-white w-full max-w-md my-auto mx-auto translate-y-[-50px] transition-all open:translate-y-0 open:opacity-100 opacity-0 m-auto fixed inset-0 z-50">
+    <div class="p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold">Edit Application</h2>
+            <button onclick="document.getElementById('editModal').close()" class="p-2 hover:bg-white/10 rounded-lg transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+
+        <form id="editForm"
+              hx-post="/edit-link/{{.ID}}"
+              hx-target="#link-{{.ID}}"
+              hx-swap="outerHTML"
+              hx-encoding="multipart/form-data"
+              class="flex flex-col gap-4">
+
+            <div>
+                <label class="block text-sm font-medium text-slate-400 mb-1">App Name</label>
+                <input type="text" name="name" value="{{.Name}}" placeholder="e.g. GitHub" required
+                    class="w-full px-4 py-2.5 bg-slate-950/60 border border-white/5 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-0 focus:border-blue-500/40 font-medium">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-slate-400 mb-1">URL</label>
+                <input type="url" name="url" value="{{.URL}}" placeholder="https://" required
+                    class="w-full px-4 py-2.5 bg-slate-950/60 border border-white/5 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-0 focus:border-blue-500/40 font-medium">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-slate-400 mb-1">Custom Icon</label>
+                {{if .Icon}}
+                <div class="mb-3 flex items-center gap-3">
+                    <img src="{{.Icon}}" alt="Current icon" class="w-10 h-10 object-contain rounded drop-shadow-md">
+                    <span class="text-xs text-slate-400">Current Icon</span>
+                </div>
+                {{end}}
+                <input type="file" name="icon" accept="image/*"
+                    class="w-full px-4 py-2 bg-slate-950/60 border border-white/5 rounded-xl text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-600 file:text-white hover:file:bg-blue-500 transition-all cursor-pointer">
+                <p class="text-xs text-slate-500 mt-2">Leave empty to keep the current icon, or upload a new one to replace it.</p>
+            </div>
+
+            <button type="submit" class="mt-4 w-full py-3 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-bold rounded-xl transition-all shadow-lg">
+                Save Changes
+            </button>
+        </form>
+    </div>
+</dialog>
+
+<script>
+    (function() {
+        var modal = document.getElementById('editModal');
+        modal.showModal();
+        document.getElementById('editForm').addEventListener('htmx:afterRequest', function(e) {
+            if (e.detail.successful) {
+                modal.close();
+                if (typeof initGrid === 'function') initGrid();
+                if (typeof applyDominantColors === 'function') applyDominantColors();
+            }
+        });
+    })();
+</script>

@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(go build:*)",
+      "Bash(grep -r \"panic\\\\|fmt.Print\\\\|print\\(\" /c/Users/Notaris/git/Volt --include=*.go)",
+      "Bash(xargs wc:*)",
+      "Bash(find /c/Users/Notaris/git/Volt/internal -type f -name \"*.go\" -exec wc -l {} +)",
+      "Bash(git -C /c/Users/Notaris/git/Volt log --oneline -10)",
+      "Bash(git -C /c/Users/Notaris/git/Volt log --all --oneline)"
+    ]
+  }
+}
