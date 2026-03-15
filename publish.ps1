@@ -1,10 +1,11 @@
 $ErrorActionPreference = "Stop"
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 # ── Configuration ─────────────────────────────────────────────────────────────
 $REGISTRY   = "ghcr.io"
 $IMAGE_NAME = "notarisj/volt"          # <owner>/<repo> — must match GitHub repo
 $BUILDER    = "volt-multiplatform"
-$PLATFORMS  = "linux/amd64,linux/arm64"
+$PLATFORMS  = "linux/amd64"
 # ─────────────────────────────────────────────────────────────────────────────
 
 # Derive version from the latest git tag, fall back to "dev"
@@ -27,7 +28,7 @@ Write-Host "  Platforms: $PLATFORMS`n"
 
 # ── 1. Log in to ghcr.io ──────────────────────────────────────────────────────
 Write-Host "[1/4] Logging in to $REGISTRY..." -ForegroundColor Yellow
-Write-Host "      Enter your GitHub Personal Access Token (needs write:packages scope)"
+Write-Host '      Enter your GitHub Personal Access Token (needs write:packages scope)'
 $TOKEN = Read-Host -AsSecureString "GitHub PAT"
 $BSTR  = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($TOKEN)
 $PLAIN = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
